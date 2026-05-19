@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gando Gym">
+<meta name="theme-color" content="#000000">
+<title>Gando Gym</title>
+<style>
+  :root {
+    --bg: #000;
+    --panel: #0e0e0e;
+    --panel-2: #161616;
+    --line: #222;
+    --muted: #777;
+    --muted-2: #555;
+    --red: #ff0033;
+    --red-deep: #b3001f;
+    --green: #1e5128;
+    --green-soft: #0d2410;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    font-size: 16px;
+    min-height: 100vh;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .container { max-width: 600px; margin: 0 auto; padding: 16px; padding-bottom: 90px; }
+
+  /* BRAND */
+  .brand-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 0 18px;
+    border-bottom: 2px solid var(--red);
+    margin-bottom: 22px;
+  }
+  .brand-logo {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-weight: 900; font-size: 32px;
+    letter-spacing: 0.04em; line-height: 1;
+    text-transform: uppercase;
+  }
+  .brand-logo .accent { color: var(--red); }
+  .brand-sub { color: var(--muted); font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; margin-top: 4px; }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-weight: 900; font-size: 36px;
+    text-transform: uppercase; letter-spacing: 0.02em;
+    line-height: 0.95; margin: 0 0 4px;
+  }
+  .section-sub { color: var(--muted); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 22px; }
+
+  /* BUTTONS */
+  button {
+    font-family: inherit; font-size: 16px; cursor: pointer;
+    border: none; border-radius: 10px; padding: 14px 16px;
+    background: #fff; color: #000; font-weight: 700;
+    -webkit-appearance: none;
+    transition: opacity 0.15s, transform 0.05s;
+  }
+  button:active { opacity: 0.75; transform: scale(0.98); }
+  button.secondary { background: var(--panel-2); color: #fff; border: 1px solid var(--line); }
+  button.danger { background: var(--red); color: #fff; }
+  button.danger-outline { background: transparent; color: var(--red); border: 1.5px solid var(--red); }
+  button.ghost { background: transparent; color: #fff; padding: 8px 12px; font-weight: 600; }
+  button:disabled { opacity: 0.3; }
+
+  /* INPUTS - explicit user-select and touch-action so they always accept input */
+  input[type="number"], input[type="text"], textarea {
+    font-family: inherit; font-size: 16px;
+    background: var(--panel-2); color: #fff;
+    border: 1.5px solid var(--line); border-radius: 10px;
+    padding: 14px; width: 100%;
+    -webkit-appearance: none;
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: manipulation;
+  }
+  input[type="number"]:focus, input[type="text"]:focus, textarea:focus {
+    outline: none; border-color: var(--red);
+  }
+  textarea { min-height: 70px; resize: vertical; line-height: 1.4; }
+
+  /* HOME CARD */
+  .day-card {
+    position: relative;
+    background: linear-gradient(135deg, var(--panel) 0%, #0a0a0a 100%);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 20px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .day-card::before {
+    content: ""; position: absolute;
+    left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--red); opacity: 0.5;
+  }
+  .day-card.has-progression { border-color: var(--red); }
+  .day-card.has-progression::before { opacity: 1; box-shadow: 0 0 12px var(--red); }
+  .day-card .day-name {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-weight: 900; font-size: 22px;
+    text-transform: uppercase; letter-spacing: 0.02em;
+    line-height: 1.05; margin-bottom: 8px;
+  }
+  .day-card .meta {
+    color: var(--muted); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+  .day-card .progression-flag {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--red); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 4px 8px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-top: 10px;
+  }
+
+  /* SESSION HEADER */
+  .session-header {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px;
+    padding: 0 0 14px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--red);
+  }
+  .session-header .title {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 22px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.02em;
+    line-height: 1.05;
+  }
+  .session-header .date {
+    color: var(--muted); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.15em;
+    margin-top: 4px;
+  }
+
+  /* EXERCISE */
+  .exercise {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .exercise.suggest-up { border-color: var(--red); }
+  .exercise.suggest-up::after {
+    content: ""; position: absolute; inset: 0;
+    border-radius: 14px; pointer-events: none;
+    box-shadow: inset 0 0 0 1px var(--red);
+  }
+  .exercise-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 12px; margin-bottom: 12px;
+  }
+  .exercise-name {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 20px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.02em;
+    line-height: 1.1; flex: 1;
+  }
+  .exercise-name .progression-inline {
+    display: inline-block;
+    background: var(--red); color: #fff;
+    font-family: -apple-system, sans-serif;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  .reorder { display: flex; gap: 4px; flex-shrink: 0; }
+  .reorder button {
+    padding: 6px 11px; font-size: 14px;
+    background: var(--panel-2); color: #fff;
+    border: 1px solid var(--line); font-weight: 700;
+    min-width: 36px;
+  }
+
+  /* NOTES - always visible */
+  .notes { margin-bottom: 14px; }
+  .notes .notes-label {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 12px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.18em;
+    margin-bottom: 6px; font-weight: 400;
+  }
+  .notes textarea {
+    font-size: 13px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: #ccc;
+    padding: 10px 12px;
+    min-height: 50px;
+  }
+
+  /* SET ROW */
+  .sets { display: flex; flex-direction: column; gap: 8px; }
+  .set-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 1fr 50px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px;
+    background: #060606;
+    border-radius: 10px;
+    border: 1px solid #1a1a1a;
+    min-height: 64px;
+  }
+  .set-row.done {
+    background: linear-gradient(135deg, var(--green-soft) 0%, #060d07 100%);
+    border-color: var(--green);
+  }
+  .set-num {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 22px; font-weight: 900;
+    text-align: center; color: var(--muted);
+    line-height: 1;
+  }
+  .set-row.done .set-num { color: #fff; }
+
+  .set-field {
+    display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  }
+  .set-field-label {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.18em;
+    font-weight: 400; line-height: 1;
+  }
+  .set-input {
+    background: var(--panel-2); color: #fff;
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 4px;
+    font-size: 18px; font-weight: 700;
+    text-align: center; width: 100%;
+    -webkit-appearance: none;
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: manipulation;
+    font-family: inherit;
+    min-width: 0;
+  }
+  .set-input:focus { outline: none; border-color: var(--red); }
+  .set-input.suggest {
+    color: var(--red);
+    border-color: var(--red);
+    background: rgba(255,0,51,0.06);
+  }
+  .set-input.done {
+    background: transparent;
+    border-color: transparent;
+    color: #fff;
+  }
+  .set-row.done .set-input.done { color: #b8e8c0; }
+
+  .last-time {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 11px; color: var(--muted-2);
+    margin-top: 4px; line-height: 1;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 400;
+    min-height: 11px;
+  }
+  .last-time.empty { visibility: hidden; }
+
+  /* CHECK BUTTON */
+  .check-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1.5px solid var(--line);
+    padding: 0;
+    font-size: 22px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto;
+    line-height: 1;
+  }
+  .check-btn.active {
+    background: var(--red); color: #fff; border-color: var(--red);
+  }
+  .check-btn.done {
+    background: #1e5128; color: #fff; border-color: #1e5128;
+  }
+
+  /* SETTINGS */
+  .settings-section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .settings-section .label {
+    color: var(--muted); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.15em;
+    font-weight: 700; margin-bottom: 10px;
+  }
+  .settings-section .value {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 28px; font-weight: 900; line-height: 1;
+  }
+  .settings-section .hint {
+    color: var(--muted-2); font-size: 12px;
+    margin-top: 6px; line-height: 1.4;
+  }
+
+  /* BANNER */
+  .banner {
+    background: var(--panel-2);
+    border-left: 3px solid var(--red);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 13px; color: #ccc;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; line-height: 1.4;
+  }
+  .banner button { padding: 4px 10px; font-size: 12px; min-width: 32px; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line);
+    display: flex; justify-content: space-around;
+    padding: 8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    z-index: 50;
+  }
+  .bottom-nav button {
+    background: transparent; color: var(--muted);
+    border-radius: 0; flex: 1;
+    padding: 8px 4px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .bottom-nav button.active { color: #fff; }
+  .bottom-nav button.active::before {
+    content: "■"; color: var(--red);
+    display: block; font-size: 6px;
+    margin-bottom: 4px;
+  }
+  .bottom-nav button:not(.active)::before {
+    content: ""; display: block; height: 6px; margin-bottom: 4px;
+  }
+
+  /* HISTORY */
+  .session-history-item {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .session-history-item .h-date {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 18px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.02em;
+    margin-bottom: 4px; line-height: 1.05;
+  }
+  .session-history-item .h-summary {
+    color: var(--muted); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+
+  .empty {
+    color: var(--muted-2); text-align: center;
+    padding: 60px 20px; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.15em;
+  }
+
+  .finish-btn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 18px;
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 22px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    background: var(--red); color: #fff;
+    border-radius: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div id="app" class="container"></div>
+
+<nav class="bottom-nav">
+  <button id="nav-home" onclick="navigate('home')">Allenamenti</button>
+  <button id="nav-history" onclick="navigate('history')">Storico</button>
+  <button id="nav-settings" onclick="navigate('settings')">Setup</button>
+</nav>
+
+<script>
+'use strict';
+
+const STORAGE_KEY = 'gandogym_v1';
+const LEGACY_KEY = 'palestra_v1';
+const MAX_SESSIONS = 100;
+const DEFAULT_PROGRESSION_THRESHOLD = 8.5;
+
+const DEFAULT_TEMPLATE = {
+  days: [
+    {
+      id: 'mon', name: 'Lunedì — Dorso + Bicipiti',
+      exercises: [
+        { id: 'e1', name: 'High Row', sets: 4, notes: '' },
+        { id: 'e2', name: 'Low Row', sets: 4, notes: '' },
+        { id: 'e3', name: 'Curl alternato', sets: 4, notes: '' },
+        { id: 'e4', name: 'Curl hammer', sets: 4, notes: '' },
+        { id: 'e5', name: 'Curl concentrato', sets: 4, notes: '' },
+      ]
+    },
+    {
+      id: 'wed', name: 'Mercoledì — Spalle + Bicipiti',
+      exercises: [
+        { id: 'e6', name: 'Lento dietro multipower', sets: 4, notes: '' },
+        { id: 'e7', name: 'Alzate laterali manubri', sets: 3, notes: '' },
+        { id: 'e8', name: 'Alzate laterali macchina', sets: 3, notes: '' },
+        { id: 'e9', name: 'Alzate laterali ai cavi', sets: 3, notes: '' },
+        { id: 'e10', name: 'Peck deck posteriore', sets: 3, notes: '' },
+        { id: 'e11', name: 'Curl mono', sets: 4, notes: '' },
+      ]
+    },
+    {
+      id: 'thu', name: 'Giovedì — Petto + Tricipiti',
+      exercises: [
+        { id: 'e12', name: 'Panca inclinata multipower', sets: 4, notes: '' },
+        { id: 'e13', name: 'Peck deck', sets: 4, notes: '' },
+        { id: 'e14', name: 'French press ez bar', sets: 4, notes: '' },
+        { id: 'e15', name: 'Triceps pulldown', sets: 4, notes: '' },
+        { id: 'e16', name: 'Chest press', sets: 4, notes: '' },
+      ]
+    }
+  ],
+  sessions: [],
+  settings: { progressionThreshold: DEFAULT_PROGRESSION_THRESHOLD }
+};
+
+let state = loadState();
+let view = 'home';
+let activeSession = null;
+
+function loadState() {
+  try {
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      if (legacy) { localStorage.setItem(STORAGE_KEY, legacy); raw = legacy; }
+    }
+    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
+    const parsed = JSON.parse(raw);
+    if (!parsed.days) parsed.days = DEFAULT_TEMPLATE.days;
+    if (!parsed.sessions) parsed.sessions = [];
+    if (!parsed.settings) parsed.settings = { progressionThreshold: DEFAULT_PROGRESSION_THRESHOLD };
+    return parsed;
+  } catch (e) {
+    return JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
+  }
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { alert('Errore nel salvataggio.'); }
+}
+
+function isStorageAvailable() {
+  try { localStorage.setItem('__t__', '1'); localStorage.removeItem('__t__'); return true; }
+  catch (e) { return false; }
+}
+
+function getLastSessionForDay(dayId) {
+  for (let i = state.sessions.length - 1; i >= 0; i--) {
+    if (state.sessions[i].dayId === dayId) return state.sessions[i];
+  }
+  return null;
+}
+
+function getLastExerciseData(dayId, exerciseName) {
+  const last = getLastSessionForDay(dayId);
+  if (!last) return null;
+  return last.exercises.find(e => e.name === exerciseName) || null;
+}
+
+function shouldSuggestIncrease(lastExerciseData) {
+  if (!lastExerciseData) return false;
+  const completedSets = lastExerciseData.sets.filter(s => s.done && s.reps != null && s.reps !== '');
+  if (completedSets.length === 0) return false;
+  const total = completedSets.reduce((a, s) => a + Number(s.reps), 0);
+  const avg = total / completedSets.length;
+  return avg >= state.settings.progressionThreshold;
+}
+
+function countSuggestionsForDay(dayId) {
+  const day = state.days.find(d => d.id === dayId);
+  if (!day) return 0;
+  return day.exercises.filter(ex => shouldSuggestIncrease(getLastExerciseData(dayId, ex.name))).length;
+}
+
+function startSession(dayId) {
+  const day = state.days.find(d => d.id === dayId);
+  if (!day) return;
+  const session = {
+    id: 'sess_' + Date.now(),
+    dayId, dayName: day.name,
+    startedAt: new Date().toISOString(),
+    completedAt: null,
+    exercises: day.exercises.map(ex => {
+      const last = getLastExerciseData(dayId, ex.name);
+      const suggest = shouldSuggestIncrease(last);
+      const lastWeights = last ? last.sets.map(s => s.weight) : [];
+      return {
+        exerciseId: ex.id,
+        name: ex.name,
+        notes: ex.notes || '',
+        suggestIncrease: suggest,
+        sets: Array.from({ length: ex.sets }, (_, i) => ({
+          weight: lastWeights[i] != null && lastWeights[i] !== '' ? lastWeights[i] : '',
+          reps: '',
+          done: false,
+          lastWeight: lastWeights[i] != null && lastWeights[i] !== '' ? lastWeights[i] : null,
+          lastReps: last && last.sets[i] ? last.sets[i].reps : null
+        }))
+      };
+    })
+  };
+  activeSession = session;
+  view = 'session';
+  render();
+}
+
+function persistActiveSession() {
+  if (!activeSession) return;
+  const idx = state.sessions.findIndex(s => s.id === activeSession.id);
+  if (idx >= 0) state.sessions[idx] = activeSession;
+  else {
+    state.sessions.push(activeSession);
+    if (state.sessions.length > MAX_SESSIONS) {
+      state.sessions = state.sessions.slice(state.sessions.length - MAX_SESSIONS);
+    }
+  }
+  saveState();
+}
+
+function toggleSetDone(exIdx, setIdx) {
+  const ex = activeSession.exercises[exIdx];
+  const set = ex.sets[setIdx];
+  if (!set.done) {
+    const w = set.weight, r = set.reps;
+    if (w === '' || w == null || isNaN(Number(w)) || Number(w) < 0) {
+      alert('Inserisci il peso della serie ' + (setIdx + 1)); return;
+    }
+    if (r === '' || r == null || isNaN(Number(r)) || Number(r) < 0) {
+      alert('Inserisci le ripetizioni della serie ' + (setIdx + 1)); return;
+    }
+    set.weight = Number(w);
+    set.reps = Number(r);
+    set.done = true;
+    if (setIdx === 0) {
+      for (let i = 1; i < ex.sets.length; i++) {
+        if (!ex.sets[i].done && (ex.sets[i].weight === '' || ex.sets[i].weight == null)) {
+          ex.sets[i].weight = Number(w);
+        }
+      }
+    }
+  } else {
+    set.done = false;
+  }
+  persistActiveSession();
+  render();
+}
+
+function updateSetField(exIdx, setIdx, field, val) {
+  const ex = activeSession.exercises[exIdx];
+  ex.sets[setIdx][field] = val;
+}
+
+function escapeHTML(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function render() {
+  ['home', 'history', 'settings'].forEach(k => {
+    const btn = document.getElementById('nav-' + k);
+    if (btn) btn.classList.toggle('active', view === k);
+  });
+  document.querySelector('.bottom-nav').style.display = (view === 'session') ? 'none' : 'flex';
+
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  if (view === 'home') renderHome(app);
+  else if (view === 'session') renderSession(app);
+  else if (view === 'history') renderHistory(app);
+  else if (view === 'settings') renderSettings(app);
+}
+
+function navigate(v) {
+  if (view === 'session' && v !== 'session') activeSession = null;
+  view = v;
+  render();
+}
+
+function renderBrandBar() {
+  return `
+    <div class="brand-bar">
+      <div>
+        <div class="brand-logo">GANDO<span class="accent">·</span>GYM</div>
+        <div class="brand-sub">Train Hard · Track Harder</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderHome(root) {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = renderBrandBar() + `
+    <div class="section-title">Oggi</div>
+    <div class="section-sub">Scegli l'allenamento</div>
+  `;
+
+  const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  if (!isStandalone && !localStorage.getItem('gandogym_pwa_dismissed')) {
+    const b = document.createElement('div');
+    b.className = 'banner';
+    b.innerHTML = `<span>Aggiungi alla schermata Home (Condividi → Aggiungi a Home) per non perdere i dati.</span>`;
+    const btn = document.createElement('button');
+    btn.className = 'ghost'; btn.textContent = '✕';
+    btn.onclick = () => { localStorage.setItem('gandogym_pwa_dismissed', '1'); render(); };
+    b.appendChild(btn);
+    wrap.appendChild(b);
+  }
+
+  if (!isStorageAvailable()) {
+    const b = document.createElement('div');
+    b.className = 'banner';
+    b.innerHTML = `<span style="color:var(--red)">Memoria browser non disponibile (navigazione privata?). I dati non verranno salvati.</span>`;
+    wrap.appendChild(b);
+  }
+
+  state.days.forEach(day => {
+    const last = getLastSessionForDay(day.id);
+    const suggestionCount = countSuggestionsForDay(day.id);
+    const card = document.createElement('div');
+    card.className = 'day-card' + (suggestionCount > 0 ? ' has-progression' : '');
+    card.style.cursor = 'pointer';
+    const lastStr = last ? `Ultima · ${formatDate(last.completedAt || last.startedAt)}` : 'Mai eseguito';
+    card.innerHTML = `
+      <div class="day-name">${escapeHTML(day.name)}</div>
+      <div class="meta">
+        <span>${lastStr}</span>
+        <span>·</span>
+        <span>${day.exercises.length} esercizi</span>
+      </div>
+      ${suggestionCount > 0 ? `<div class="progression-flag">↑ ${suggestionCount} aumento${suggestionCount > 1 ? 'i' : ''} consigliat${suggestionCount > 1 ? 'i' : 'o'}</div>` : ''}
+    `;
+    card.onclick = () => startSession(day.id);
+    wrap.appendChild(card);
+  });
+
+  root.appendChild(wrap);
+}
+
+function renderSession(root) {
+  if (!activeSession) { view = 'home'; render(); return; }
+
+  const head = document.createElement('div');
+  head.className = 'session-header';
+  head.innerHTML = `
+    <div>
+      <div class="title">${escapeHTML(activeSession.dayName)}</div>
+      <div class="date">${formatDate(activeSession.startedAt)}</div>
+    </div>
+  `;
+  const btnDone = document.createElement('button');
+  btnDone.className = 'secondary';
+  btnDone.textContent = 'Esci';
+  btnDone.onclick = () => finishSession();
+  head.appendChild(btnDone);
+  root.appendChild(head);
+
+  activeSession.exercises.forEach((ex, exIdx) => {
+    const box = document.createElement('div');
+    box.className = 'exercise' + (ex.suggestIncrease ? ' suggest-up' : '');
+
+    const headEl = document.createElement('div');
+    headEl.className = 'exercise-head';
+    headEl.innerHTML = `
+      <div class="exercise-name">
+        ${escapeHTML(ex.name)}
+        ${ex.suggestIncrease ? '<span class="progression-inline">↑ Aumenta</span>' : ''}
+      </div>
+      <div class="reorder">
+        <button data-act="up" ${exIdx === 0 ? 'disabled' : ''}>↑</button>
+        <button data-act="down" ${exIdx === activeSession.exercises.length - 1 ? 'disabled' : ''}>↓</button>
+      </div>
+    `;
+    headEl.querySelector('[data-act="up"]').onclick = () => moveExercise(exIdx, -1);
+    headEl.querySelector('[data-act="down"]').onclick = () => moveExercise(exIdx, +1);
+    box.appendChild(headEl);
+
+    // Notes - always visible right under title
+    const notes = document.createElement('div');
+    notes.className = 'notes';
+    notes.innerHTML = `<div class="notes-label">Note</div>`;
+    const ta = document.createElement('textarea');
+    ta.value = ex.notes || '';
+    ta.placeholder = 'Tecnica, cadenza, sensazioni…';
+    ta.oninput = (e) => {
+      ex.notes = e.target.value;
+      const day = state.days.find(d => d.id === activeSession.dayId);
+      if (day) {
+        const dayEx = day.exercises.find(x => x.name === ex.name);
+        if (dayEx) dayEx.notes = e.target.value;
+      }
+    };
+    ta.onblur = () => persistActiveSession();
+    notes.appendChild(ta);
+    box.appendChild(notes);
+
+    // Sets
+    const setsDiv = document.createElement('div');
+    setsDiv.className = 'sets';
+    ex.sets.forEach((s, setIdx) => {
+      const row = document.createElement('div');
+      row.className = 'set-row' + (s.done ? ' done' : '');
+
+      const numDiv = document.createElement('div');
+      numDiv.className = 'set-num';
+      numDiv.textContent = setIdx + 1;
+      row.appendChild(numDiv);
+
+      // Weight
+      const wField = document.createElement('div');
+      wField.className = 'set-field';
+      wField.innerHTML = `<div class="set-field-label">Peso · kg</div>`;
+      const wInput = document.createElement('input');
+      wInput.type = 'number';
+      wInput.inputMode = 'decimal';
+      wInput.step = '0.5';
+      wInput.min = '0';
+      wInput.className = 'set-input' + (s.done ? ' done' : (ex.suggestIncrease && !s.done ? ' suggest' : ''));
+      wInput.value = s.weight === '' || s.weight == null ? '' : s.weight;
+      wInput.disabled = s.done;
+      wInput.placeholder = '—';
+      wInput.oninput = (e) => updateSetField(exIdx, setIdx, 'weight', e.target.value);
+      wInput.onblur = () => persistActiveSession();
+      wField.appendChild(wInput);
+      const wLast = document.createElement('div');
+      wLast.className = 'last-time' + (s.lastWeight == null ? ' empty' : '');
+      wLast.textContent = s.lastWeight != null ? `prec: ${s.lastWeight} kg` : 'prec: —';
+      wField.appendChild(wLast);
+      row.appendChild(wField);
+
+      // Reps
+      const rField = document.createElement('div');
+      rField.className = 'set-field';
+      rField.innerHTML = `<div class="set-field-label">Reps</div>`;
+      const rInput = document.createElement('input');
+      rInput.type = 'number';
+      rInput.inputMode = 'numeric';
+      rInput.step = '1';
+      rInput.min = '0';
+      rInput.className = 'set-input' + (s.done ? ' done' : '');
+      rInput.value = s.reps === '' || s.reps == null ? '' : s.reps;
+      rInput.disabled = s.done;
+      rInput.placeholder = '—';
+      rInput.oninput = (e) => updateSetField(exIdx, setIdx, 'reps', e.target.value);
+      rInput.onblur = () => persistActiveSession();
+      rField.appendChild(rInput);
+      const rLast = document.createElement('div');
+      rLast.className = 'last-time' + (s.lastReps == null ? ' empty' : '');
+      rLast.textContent = s.lastReps != null ? `prec: ${s.lastReps} reps` : 'prec: —';
+      rField.appendChild(rLast);
+      row.appendChild(rField);
+
+      // Check
+      const checkWrap = document.createElement('div');
+      const checkBtn = document.createElement('button');
+      checkBtn.className = 'check-btn' + (s.done ? ' done' : (s.weight !== '' && s.reps !== '' ? ' active' : ''));
+      checkBtn.innerHTML = '✓';
+      checkBtn.title = s.done ? 'Annulla conferma' : 'Conferma serie';
+      checkBtn.onclick = () => toggleSetDone(exIdx, setIdx);
+      checkWrap.appendChild(checkBtn);
+      row.appendChild(checkWrap);
+
+      setsDiv.appendChild(row);
+    });
+    box.appendChild(setsDiv);
+
+    root.appendChild(box);
+  });
+
+  const finishBtn = document.createElement('button');
+  finishBtn.className = 'finish-btn';
+  finishBtn.textContent = '✓ Termina allenamento';
+  finishBtn.onclick = () => finishSession();
+  root.appendChild(finishBtn);
+}
+
+function moveExercise(idx, dir) {
+  const arr = activeSession.exercises;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+
+  const day = state.days.find(d => d.id === activeSession.dayId);
+  if (day) {
+    const newOrder = activeSession.exercises.map(e => day.exercises.find(de => de.name === e.name)).filter(Boolean);
+    if (newOrder.length === day.exercises.length) day.exercises = newOrder;
+  }
+  persistActiveSession();
+  render();
+}
+
+function finishSession() {
+  if (!activeSession) { view = 'home'; render(); return; }
+  document.querySelectorAll('.set-input').forEach(inp => inp.blur());
+  activeSession.completedAt = new Date().toISOString();
+  persistActiveSession();
+  activeSession = null;
+  view = 'home';
+  render();
+}
+
+function renderHistory(root) {
+  root.innerHTML = renderBrandBar() + `
+    <div class="section-title">Storico</div>
+    <div class="section-sub">${state.sessions.length} / ${MAX_SESSIONS} sessioni</div>
+  `;
+  if (state.sessions.length === 0) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = 'Nessuna sessione registrata';
+    root.appendChild(e);
+    return;
+  }
+  const sorted = [...state.sessions].sort((a, b) =>
+    new Date(b.completedAt || b.startedAt) - new Date(a.completedAt || a.startedAt));
+  sorted.forEach(s => {
+    const totalSets = s.exercises.reduce((a, e) => a + e.sets.filter(x => x.done).length, 0);
+    const div = document.createElement('div');
+    div.className = 'session-history-item';
+    div.innerHTML = `
+      <div class="h-date">${formatDate(s.completedAt || s.startedAt)}</div>
+      <div class="h-summary">${escapeHTML(s.dayName)} · ${totalSets} serie</div>
+    `;
+    root.appendChild(div);
+  });
+}
+
+function renderSettings(root) {
+  root.innerHTML = renderBrandBar() + `
+    <div class="section-title">Setup</div>
+    <div class="section-sub">Configurazione e dati</div>
+  `;
+
+  const sec1 = document.createElement('div');
+  sec1.className = 'settings-section';
+  sec1.innerHTML = `<div class="label">Soglia media reps per aumento peso</div>`;
+  const thInput = document.createElement('input');
+  thInput.type = 'number';
+  thInput.step = '0.1'; thInput.min = '1'; thInput.max = '30';
+  thInput.value = state.settings.progressionThreshold;
+  thInput.style.fontSize = '20px';
+  thInput.style.fontWeight = '700';
+  thInput.style.textAlign = 'center';
+  thInput.onchange = (e) => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v) && v > 0) { state.settings.progressionThreshold = v; saveState(); }
+  };
+  sec1.appendChild(thInput);
+  const hint = document.createElement('div');
+  hint.className = 'hint';
+  hint.textContent = 'Se la media reps dell\'ultima sessione di un esercizio supera questo valore, l\'app suggerisce di aumentare il peso.';
+  sec1.appendChild(hint);
+  root.appendChild(sec1);
+
+  const sec2 = document.createElement('div');
+  sec2.className = 'settings-section';
+  let bytes = 0;
+  try { bytes = (localStorage.getItem(STORAGE_KEY) || '').length; } catch (e) {}
+  sec2.innerHTML = `
+    <div class="label">Memoria</div>
+    <div class="value">${state.sessions.length} <span style="font-size:14px;color:var(--muted)">/ ${MAX_SESSIONS}</span></div>
+    <div class="hint">${(bytes/1024).toFixed(1)} KB utilizzati</div>
+  `;
+  root.appendChild(sec2);
+
+  const sec3 = document.createElement('div');
+  sec3.className = 'settings-section';
+  sec3.innerHTML = `<div class="label">Esporta dati</div><div class="hint" style="margin-bottom:14px">Scarica o condividi tutte le sessioni in formato CSV.</div>`;
+  const expBtn = document.createElement('button');
+  expBtn.textContent = '⬇ Esporta CSV';
+  expBtn.style.width = '100%';
+  expBtn.onclick = exportCSV;
+  sec3.appendChild(expBtn);
+  root.appendChild(sec3);
+
+  const sec4 = document.createElement('div');
+  sec4.className = 'settings-section';
+  sec4.innerHTML = `<div class="label">Zona pericolo</div><div class="hint" style="margin-bottom:14px">Operazioni non reversibili.</div>`;
+
+  const resetSessionsBtn = document.createElement('button');
+  resetSessionsBtn.textContent = 'Cancella solo storico sessioni';
+  resetSessionsBtn.className = 'danger-outline';
+  resetSessionsBtn.style.width = '100%';
+  resetSessionsBtn.style.marginBottom = '10px';
+  resetSessionsBtn.onclick = () => {
+    if (confirm('Cancellare tutte le sessioni registrate?')) {
+      state.sessions = [];
+      saveState();
+      alert('Storico cancellato.');
+      render();
+    }
+  };
+  sec4.appendChild(resetSessionsBtn);
+
+  const resetAllBtn = document.createElement('button');
+  resetAllBtn.textContent = 'RESET TOTALE';
+  resetAllBtn.className = 'danger';
+  resetAllBtn.style.width = '100%';
+  resetAllBtn.onclick = () => {
+    if (confirm('Cancella TUTTO (sessioni, note, riordini). Continuare?')) {
+      if (confirm('Sicuro? Non è reversibile.')) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(LEGACY_KEY);
+        localStorage.removeItem('gandogym_pwa_dismissed');
+        state = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
+        view = 'home';
+        render();
+      }
+    }
+  };
+  sec4.appendChild(resetAllBtn);
+  root.appendChild(sec4);
+
+  const v = document.createElement('div');
+  v.style.cssText = 'color:#333;font-size:10px;text-align:center;margin-top:24px;letter-spacing:0.2em;text-transform:uppercase';
+  v.textContent = 'Gando Gym · v1.1';
+  root.appendChild(v);
+}
+
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = String(v);
+  if (/[",\n;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function exportCSV() {
+  const rows = [['data', 'giorno', 'esercizio', 'serie', 'peso_kg', 'ripetizioni', 'completata', 'note']];
+  const sorted = [...state.sessions].sort((a, b) =>
+    new Date(a.completedAt || a.startedAt) - new Date(b.completedAt || b.startedAt));
+  sorted.forEach(s => {
+    const date = (s.completedAt || s.startedAt || '').substring(0, 10);
+    s.exercises.forEach(ex => {
+      ex.sets.forEach((set, i) => {
+        rows.push([
+          date, s.dayName, ex.name, i + 1,
+          set.weight === '' || set.weight == null ? '' : set.weight,
+          set.reps === '' || set.reps == null ? '' : set.reps,
+          set.done ? '1' : '0',
+          ex.notes || ''
+        ]);
+      });
+    });
+  });
+  const csv = rows.map(r => r.map(csvEscape).join(',')).join('\n');
+  const filename = `gandogym_${new Date().toISOString().substring(0, 10)}.csv`;
+
+  try {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const file = new File([blob], filename, { type: 'text/csv' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'Esportazione Gando Gym' }).catch(() => {});
+      return;
+    }
+  } catch (e) {}
+
+  try {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  } catch (e) {
+    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    window.open(dataUri, '_blank');
+  }
+}
+
+render();
+</script>
+</body>
+</html>
