@@ -441,6 +441,7 @@
 'use strict';
 
 const STORAGE_KEY = 'gandogym_v1';
+const DRAFT_KEY = 'gandogym_draft';
 const LEGACY_KEY = 'palestra_v1';
 const MAX_SESSIONS = 100;
 const DEFAULT_PROGRESSION_THRESHOLD = 8.5;
@@ -577,17 +578,36 @@ function startSession(dayId) {
   render();
 }
 
+// Save the in-progress session as a DRAFT in a separate localStorage key.
+// It does NOT enter state.sessions until finishSession() promotes it.
 function persistActiveSession() {
   if (!activeSession) return;
-  const idx = state.sessions.findIndex(s => s.id === activeSession.id);
-  if (idx >= 0) state.sessions[idx] = activeSession;
-  else {
-    state.sessions.push(activeSession);
-    if (state.sessions.length > MAX_SESSIONS) {
-      state.sessions = state.sessions.slice(state.sessions.length - MAX_SESSIONS);
-    }
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(activeSession));
+  } catch (e) {
+    // ignore — best effort
   }
-  saveState();
+}
+
+function discardDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+}
+
+// "User data" = anything the user actively entered: a confirmed set, or any reps value typed.
+// Weight values copied automatically from the previous session don't count.
+function sessionHasUserData(session) {
+  if (!session) return false;
+  return session.exercises.some(ex =>
+    ex.sets.some(s => s.done || (s.reps !== '' && s.reps != null))
+  );
+}
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
 }
 
 function toggleSetDone(exIdx, setIdx) {
@@ -652,7 +672,21 @@ function render() {
 }
 
 function navigate(v) {
-  if (view === 'session' && v !== 'session') activeSession = null;
+  if (view === 'session' && v !== 'session') {
+    const target = v;
+    if (activeSession) {
+      if (sessionHasUserData(activeSession)) {
+        if (!confirm('Sei sicuro? Uscendo perdi i dati di questa sessione e non verrà salvata nello storico.')) {
+          return;
+        }
+      }
+      discardDraft();
+      activeSession = null;
+    }
+    view = target;
+    render();
+    return;
+  }
   view = v;
   render();
 }
@@ -731,7 +765,7 @@ function renderSession(root) {
   const btnDone = document.createElement('button');
   btnDone.className = 'secondary';
   btnDone.textContent = 'Esci';
-  btnDone.onclick = () => finishSession();
+  btnDone.onclick = () => exitSession();
   head.appendChild(btnDone);
   root.appendChild(head);
 
@@ -876,11 +910,49 @@ function moveExercise(idx, dir) {
   render();
 }
 
+// Finalize: promote the draft into the permanent sessions array, save, clear draft.
 function finishSession() {
   if (!activeSession) { view = 'home'; render(); return; }
   document.querySelectorAll('.set-input').forEach(inp => inp.blur());
+
+  // Only save sessions where at least one set was completed.
+  const hasAnyDoneSet = activeSession.exercises.some(ex => ex.sets.some(s => s.done));
+  if (!hasAnyDoneSet) {
+    if (!confirm('Non hai confermato nessuna serie. Terminare comunque senza salvare?')) {
+      return;
+    }
+    discardDraft();
+    activeSession = null;
+    view = 'home';
+    render();
+    return;
+  }
+
   activeSession.completedAt = new Date().toISOString();
-  persistActiveSession();
+  // promote into sessions array
+  state.sessions.push(activeSession);
+  if (state.sessions.length > MAX_SESSIONS) {
+    state.sessions = state.sessions.slice(state.sessions.length - MAX_SESSIONS);
+  }
+  saveState();
+  discardDraft();
+  activeSession = null;
+  view = 'home';
+  render();
+}
+
+// Exit without saving: ask for confirmation, then discard the draft.
+function exitSession() {
+  if (!activeSession) { view = 'home'; render(); return; }
+  // flush any pending input values into activeSession (without saving the draft)
+  document.querySelectorAll('.set-input').forEach(inp => inp.blur());
+
+  if (sessionHasUserData(activeSession)) {
+    if (!confirm('Sei sicuro? Uscendo perdi i dati di questa sessione e non verrà salvata nello storico.')) {
+      return;
+    }
+  }
+  discardDraft();
   activeSession = null;
   view = 'home';
   render();
@@ -988,6 +1060,7 @@ function renderSettings(root) {
       if (confirm('Sicuro? Non è reversibile.')) {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(LEGACY_KEY);
+        localStorage.removeItem(DRAFT_KEY);
         localStorage.removeItem('gandogym_pwa_dismissed');
         state = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
         view = 'home';
@@ -1055,6 +1128,23 @@ function exportCSV() {
     window.open(dataUri, '_blank');
   }
 }
+
+// On boot: check for an interrupted draft session and offer to resume
+(function bootCheckDraft() {
+  const draft = loadDraft();
+  if (draft && draft.dayId && draft.exercises) {
+    if (sessionHasUserData(draft)) {
+      if (confirm('Hai una sessione in corso non terminata (' + (draft.dayName || '') + '). Vuoi riprenderla?')) {
+        activeSession = draft;
+        view = 'session';
+      } else {
+        discardDraft();
+      }
+    } else {
+      discardDraft();
+    }
+  }
+})();
 
 render();
 </script>
