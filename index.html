@@ -83,9 +83,18 @@
     border: 1.5px solid var(--line); border-radius: 10px;
     padding: 14px; width: 100%;
     -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: none;
     -webkit-user-select: text;
     user-select: text;
     touch-action: manipulation;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
   input[type="number"]:focus, input[type="text"]:focus, textarea:focus {
     outline: none; border-color: var(--red);
@@ -212,10 +221,10 @@
   /* SET ROW */
   .sets { display: flex; flex-direction: column; gap: 8px; }
   .set-row {
-    display: grid;
-    grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr) 48px;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
     gap: 8px;
-    align-items: start;
     padding: 10px;
     background: #060606;
     border-radius: 10px;
@@ -232,11 +241,14 @@
     text-align: center; color: var(--muted);
     line-height: 1;
     padding-top: 22px;
+    flex: 0 0 28px;
   }
   .set-row.done .set-num { color: #fff; }
 
   .set-field {
-    display: flex; flex-direction: column; gap: 4px; min-width: 0;
+    display: flex; flex-direction: column; gap: 4px;
+    flex: 1 1 0;
+    min-width: 0;
   }
   .set-field-label {
     font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
@@ -250,13 +262,23 @@
     border-radius: 8px;
     padding: 8px 4px;
     font-size: 18px; font-weight: 700;
-    text-align: center; width: 100%;
+    text-align: center;
+    width: 100%;
     -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: none;
     -webkit-user-select: text;
     user-select: text;
     touch-action: manipulation;
     font-family: inherit;
     min-width: 0;
+    box-sizing: border-box;
+    display: block;
+  }
+  .set-input::-webkit-outer-spin-button,
+  .set-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
   .set-input:focus { outline: none; border-color: var(--red); }
   .set-input.suggest {
@@ -270,6 +292,10 @@
     color: #fff;
   }
   .set-row.done .set-input.done { color: #b8e8c0; }
+
+  .check-col {
+    flex: 0 0 44px;
+  }
 
   .last-time {
     font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
@@ -529,17 +555,19 @@ function startSession(dayId) {
       const last = getLastExerciseData(dayId, ex.name);
       const suggest = shouldSuggestIncrease(last);
       const lastWeights = last ? last.sets.map(s => s.weight) : [];
+      const lastRepsArr = last ? last.sets.map(s => s.reps) : [];
+      const isVal = (v) => v != null && v !== '' && !isNaN(Number(v));
       return {
         exerciseId: ex.id,
         name: ex.name,
         notes: ex.notes || '',
         suggestIncrease: suggest,
         sets: Array.from({ length: ex.sets }, (_, i) => ({
-          weight: lastWeights[i] != null && lastWeights[i] !== '' ? lastWeights[i] : '',
+          weight: isVal(lastWeights[i]) ? lastWeights[i] : '',
           reps: '',
           done: false,
-          lastWeight: lastWeights[i] != null && lastWeights[i] !== '' ? lastWeights[i] : null,
-          lastReps: last && last.sets[i] ? last.sets[i].reps : null
+          lastWeight: isVal(lastWeights[i]) ? lastWeights[i] : null,
+          lastReps: isVal(lastRepsArr[i]) ? lastRepsArr[i] : null
         }))
       };
     })
@@ -774,10 +802,14 @@ function renderSession(root) {
       wInput.oninput = (e) => updateSetField(exIdx, setIdx, 'weight', e.target.value);
       wInput.onblur = () => persistActiveSession();
       wField.appendChild(wInput);
-      const wLast = document.createElement('div');
-      wLast.className = 'last-time' + (s.lastWeight == null ? ' empty' : '');
-      wLast.textContent = s.lastWeight != null ? `prec: ${s.lastWeight} kg` : 'prec: —';
-      wField.appendChild(wLast);
+      // Show prec line: on both columns if either has data, hidden on both otherwise
+      const hasAnyPrec = (s.lastWeight != null) || (s.lastReps != null);
+      if (hasAnyPrec) {
+        const wLast = document.createElement('div');
+        wLast.className = 'last-time';
+        wLast.textContent = s.lastWeight != null ? `prec: ${s.lastWeight} kg` : 'prec: —';
+        wField.appendChild(wLast);
+      }
       row.appendChild(wField);
 
       // Reps
@@ -796,14 +828,17 @@ function renderSession(root) {
       rInput.oninput = (e) => updateSetField(exIdx, setIdx, 'reps', e.target.value);
       rInput.onblur = () => persistActiveSession();
       rField.appendChild(rInput);
-      const rLast = document.createElement('div');
-      rLast.className = 'last-time' + (s.lastReps == null ? ' empty' : '');
-      rLast.textContent = s.lastReps != null ? `prec: ${s.lastReps} reps` : 'prec: —';
-      rField.appendChild(rLast);
+      if (hasAnyPrec) {
+        const rLast = document.createElement('div');
+        rLast.className = 'last-time';
+        rLast.textContent = s.lastReps != null ? `prec: ${s.lastReps} reps` : 'prec: —';
+        rField.appendChild(rLast);
+      }
       row.appendChild(rField);
 
       // Check
       const checkWrap = document.createElement('div');
+      checkWrap.className = 'check-col';
       const checkBtn = document.createElement('button');
       checkBtn.className = 'check-btn' + (s.done ? ' done' : (s.weight !== '' && s.reps !== '' ? ' active' : ''));
       checkBtn.innerHTML = '✓';
