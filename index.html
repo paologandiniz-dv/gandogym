@@ -425,6 +425,156 @@
     background: var(--red); color: #fff;
     border-radius: 12px;
   }
+
+  /* HISTORY DETAIL */
+  .session-history-item { cursor: pointer; }
+  .session-history-item:active { opacity: 0.7; }
+  .session-history-item .h-chevron {
+    float: right;
+    color: var(--muted-2);
+    font-size: 20px;
+    line-height: 1;
+    margin-top: -2px;
+  }
+  .history-detail-ex {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .history-detail-ex .hd-name {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 18px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.02em;
+    line-height: 1.1; margin-bottom: 8px;
+  }
+  .history-detail-ex .hd-notes {
+    color: var(--muted); font-size: 12px;
+    margin-bottom: 10px; line-height: 1.4;
+    font-style: italic;
+  }
+  .history-detail-ex .hd-sets {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .history-detail-ex .hd-set {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px;
+    padding: 6px 0;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .history-detail-ex .hd-set:last-child { border-bottom: none; }
+  .history-detail-ex .hd-set.skipped { color: var(--muted-2); }
+  .history-detail-ex .hd-set .hd-num {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-weight: 900; font-size: 14px;
+    color: var(--muted); min-width: 22px;
+  }
+  .history-detail-ex .hd-set.done .hd-num { color: #1e5128; }
+  .history-detail-ex .hd-set .hd-val { font-weight: 700; }
+  .history-detail-ex .hd-set .hd-sep { color: var(--muted-2); }
+  .history-detail-ex .hd-set .hd-tag {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--muted-2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ROUTINE EDITOR */
+  .edit-routine-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    border-radius: 8px;
+  }
+  .routine-day-block {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .routine-ex-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .routine-ex-row input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    font-size: 15px;
+    min-width: 0;
+  }
+  .routine-ex-row input[type="number"] {
+    width: 60px;
+    padding: 10px 4px;
+    font-size: 15px;
+    text-align: center;
+  }
+  .routine-ex-row .rx-controls {
+    display: flex; flex-direction: column; gap: 4px;
+    flex-shrink: 0;
+  }
+  .routine-ex-row .rx-controls button {
+    padding: 4px 9px;
+    font-size: 12px;
+    min-width: 32px;
+    background: #060606;
+    color: #fff;
+    border: 1px solid var(--line);
+    font-weight: 700;
+  }
+  .routine-ex-row .rx-del {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid var(--red);
+    padding: 8px 10px;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .routine-ex-row .rx-sets-label {
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  .routine-ex-row .rx-sets-wrap {
+    display: flex; flex-direction: column;
+    flex-shrink: 0;
+  }
+  .routine-add-btn {
+    width: 100%;
+    background: transparent;
+    color: var(--muted);
+    border: 1.5px dashed var(--line);
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+  .routine-hint {
+    color: var(--muted-2);
+    font-size: 11px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border-left: 2px solid var(--red);
+    border-radius: 4px;
+  }
 </style>
 </head>
 <body>
@@ -445,6 +595,8 @@ const DRAFT_KEY = 'gandogym_draft';
 const LEGACY_KEY = 'palestra_v1';
 const MAX_SESSIONS = 100;
 const DEFAULT_PROGRESSION_THRESHOLD = 8.5;
+// Incrementare quando il DEFAULT_TEMPLATE cambia, per forzare la migrazione delle schede salvate
+const TEMPLATE_VERSION = 2;
 
 const DEFAULT_TEMPLATE = {
   days: [
@@ -453,9 +605,9 @@ const DEFAULT_TEMPLATE = {
       exercises: [
         { id: 'e1', name: 'High Row', sets: 4, notes: '' },
         { id: 'e2', name: 'Low Row', sets: 4, notes: '' },
-        { id: 'e3', name: 'Curl alternato', sets: 4, notes: '' },
-        { id: 'e4', name: 'Curl hammer', sets: 4, notes: '' },
-        { id: 'e5', name: 'Curl concentrato', sets: 4, notes: '' },
+        { id: 'e3', name: 'Peck deck posteriore', sets: 4, notes: '' },
+        { id: 'e4', name: 'Curl alternato', sets: 4, notes: '' },
+        { id: 'e5', name: 'Curl hammer', sets: 4, notes: '' },
       ]
     },
     {
@@ -465,8 +617,8 @@ const DEFAULT_TEMPLATE = {
         { id: 'e7', name: 'Alzate laterali manubri', sets: 3, notes: '' },
         { id: 'e8', name: 'Alzate laterali macchina', sets: 3, notes: '' },
         { id: 'e9', name: 'Alzate laterali ai cavi', sets: 3, notes: '' },
-        { id: 'e10', name: 'Peck deck posteriore', sets: 3, notes: '' },
-        { id: 'e11', name: 'Curl mono', sets: 4, notes: '' },
+        { id: 'e11', name: 'Curl mono', sets: 3, notes: '' },
+        { id: 'e17', name: 'Curl panca inclinata', sets: 3, notes: '' },
       ]
     },
     {
@@ -487,6 +639,8 @@ const DEFAULT_TEMPLATE = {
 let state = loadState();
 let view = 'home';
 let activeSession = null;
+let viewingSessionId = null; // id della sessione storica aperta in dettaglio
+let editingDayId = null;     // id del giorno aperto nell'editor scheda
 
 function loadState() {
   try {
@@ -495,14 +649,26 @@ function loadState() {
       const legacy = localStorage.getItem(LEGACY_KEY);
       if (legacy) { localStorage.setItem(STORAGE_KEY, legacy); raw = legacy; }
     }
-    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
+    if (!raw) {
+      const fresh = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
+      fresh.templateVersion = TEMPLATE_VERSION;
+      return fresh;
+    }
     const parsed = JSON.parse(raw);
-    if (!parsed.days) parsed.days = DEFAULT_TEMPLATE.days;
+    if (!parsed.days) parsed.days = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE.days));
     if (!parsed.sessions) parsed.sessions = [];
     if (!parsed.settings) parsed.settings = { progressionThreshold: DEFAULT_PROGRESSION_THRESHOLD };
+    // Migrazione schede se la versione è cambiata: sostituisce SOLO il template degli esercizi,
+    // preservando integralmente sessioni storiche e impostazioni.
+    if (parsed.templateVersion !== TEMPLATE_VERSION) {
+      parsed.days = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE.days));
+      parsed.templateVersion = TEMPLATE_VERSION;
+    }
     return parsed;
   } catch (e) {
-    return JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
+    const fresh = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE));
+    fresh.templateVersion = TEMPLATE_VERSION;
+    return fresh;
   }
 }
 
@@ -658,9 +824,10 @@ function formatDate(iso) {
 function render() {
   ['home', 'history', 'settings'].forEach(k => {
     const btn = document.getElementById('nav-' + k);
-    if (btn) btn.classList.toggle('active', view === k);
+    if (btn) btn.classList.toggle('active', view === k || (k === 'history' && view === 'history-detail'));
   });
-  document.querySelector('.bottom-nav').style.display = (view === 'session') ? 'none' : 'flex';
+  const hideNav = (view === 'session' || view === 'routine-editor');
+  document.querySelector('.bottom-nav').style.display = hideNav ? 'none' : 'flex';
 
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -668,6 +835,8 @@ function render() {
   if (view === 'home') renderHome(app);
   else if (view === 'session') renderSession(app);
   else if (view === 'history') renderHistory(app);
+  else if (view === 'history-detail') renderHistoryDetail(app);
+  else if (view === 'routine-editor') renderRoutineEditor(app);
   else if (view === 'settings') renderSettings(app);
 }
 
@@ -686,6 +855,14 @@ function navigate(v) {
     view = target;
     render();
     return;
+  }
+  // Uscendo dall'editor di routine, lo chiudiamo
+  if (view === 'routine-editor') {
+    editingDayId = null;
+  }
+  // Uscendo dal dettaglio storico
+  if (view === 'history-detail' && v !== 'history-detail') {
+    viewingSessionId = null;
   }
   view = v;
   render();
@@ -736,15 +913,28 @@ function renderHome(root) {
     card.style.cursor = 'pointer';
     const lastStr = last ? `Ultima · ${formatDate(last.completedAt || last.startedAt)}` : 'Mai eseguito';
     card.innerHTML = `
-      <div class="day-name">${escapeHTML(day.name)}</div>
-      <div class="meta">
-        <span>${lastStr}</span>
-        <span>·</span>
-        <span>${day.exercises.length} esercizi</span>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div class="day-name">${escapeHTML(day.name)}</div>
+          <div class="meta">
+            <span>${lastStr}</span>
+            <span>·</span>
+            <span>${day.exercises.length} esercizi</span>
+          </div>
+          ${suggestionCount > 0 ? `<div class="progression-flag">↑ ${suggestionCount} ${suggestionCount > 1 ? 'aumenti consigliati' : 'aumento consigliato'}</div>` : ''}
+        </div>
+        <button class="edit-routine-btn" data-edit="${day.id}">✎ Modifica</button>
       </div>
-      ${suggestionCount > 0 ? `<div class="progression-flag">↑ ${suggestionCount} aumento${suggestionCount > 1 ? 'i' : ''} consigliat${suggestionCount > 1 ? 'i' : 'o'}</div>` : ''}
     `;
-    card.onclick = () => startSession(day.id);
+    // Click sull'intera card avvia la sessione, tranne sul tasto Modifica
+    card.onclick = (e) => {
+      if (e.target.closest('[data-edit]')) {
+        e.stopPropagation();
+        openRoutineEditor(day.id);
+        return;
+      }
+      startSession(day.id);
+    };
     wrap.appendChild(card);
   });
 
@@ -895,6 +1085,176 @@ function renderSession(root) {
   root.appendChild(finishBtn);
 }
 
+function openRoutineEditor(dayId) {
+  editingDayId = dayId;
+  view = 'routine-editor';
+  render();
+}
+
+// Genera un nuovo id univoco per un esercizio del template
+function newExerciseId() {
+  return 'ex_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+}
+
+function renderRoutineEditor(root) {
+  const day = state.days.find(d => d.id === editingDayId);
+  if (!day) { view = 'home'; render(); return; }
+
+  const head = document.createElement('div');
+  head.className = 'session-header';
+  head.innerHTML = `
+    <div>
+      <div class="title">Modifica · ${escapeHTML(day.name)}</div>
+      <div class="date">Routine settimanale</div>
+    </div>
+  `;
+  const backBtn = document.createElement('button');
+  backBtn.className = 'secondary';
+  backBtn.textContent = '← Fine';
+  backBtn.onclick = () => { editingDayId = null; view = 'home'; render(); };
+  head.appendChild(backBtn);
+  root.appendChild(head);
+
+  const hint = document.createElement('div');
+  hint.className = 'routine-hint';
+  hint.innerHTML = 'Modifica nomi, serie e ordine degli esercizi. <b>Rinominando un esercizio</b> il tracking dei progressi (peso/reps della sessione precedente) <b>riparte da zero</b> per quel nuovo nome. Lo storico delle sessioni passate resta sempre intatto.';
+  root.appendChild(hint);
+
+  const block = document.createElement('div');
+  block.className = 'routine-day-block';
+
+  day.exercises.forEach((ex, idx) => {
+    const row = document.createElement('div');
+    row.className = 'routine-ex-row';
+
+    // Controlli di riordino (su/giù)
+    const ctrls = document.createElement('div');
+    ctrls.className = 'rx-controls';
+    const upBtn = document.createElement('button');
+    upBtn.textContent = '↑';
+    upBtn.disabled = idx === 0;
+    upBtn.onclick = () => moveRoutineExercise(idx, -1);
+    const dnBtn = document.createElement('button');
+    dnBtn.textContent = '↓';
+    dnBtn.disabled = idx === day.exercises.length - 1;
+    dnBtn.onclick = () => moveRoutineExercise(idx, +1);
+    ctrls.appendChild(upBtn);
+    ctrls.appendChild(dnBtn);
+    row.appendChild(ctrls);
+
+    // Nome esercizio
+    const nameIn = document.createElement('input');
+    nameIn.type = 'text';
+    nameIn.value = ex.name;
+    nameIn.placeholder = 'Nome esercizio';
+    nameIn.onchange = (e) => {
+      const newName = e.target.value.trim();
+      if (!newName) { e.target.value = ex.name; return; }
+      if (newName === ex.name) return;
+      // Avvertenza solo se ci sono sessioni passate per l'esercizio
+      const hasHistory = state.sessions.some(s =>
+        s.dayId === day.id && s.exercises.some(se => se.name === ex.name)
+      );
+      if (hasHistory) {
+        if (!confirm(`Stai cambiando "${ex.name}" in "${newName}".\n\nIl tracking dei progressi per questo slot ripartirà da zero (nessun "prec" né suggerimento di aumento finché non avrai almeno una sessione con il nuovo esercizio).\n\nLo storico delle vecchie sessioni resta intatto.\n\nConfermi?`)) {
+          e.target.value = ex.name;
+          return;
+        }
+      }
+      ex.name = newName;
+      saveState();
+    };
+    row.appendChild(nameIn);
+
+    // Numero serie
+    const setsWrap = document.createElement('div');
+    setsWrap.className = 'rx-sets-wrap';
+    const lbl = document.createElement('div');
+    lbl.className = 'rx-sets-label';
+    lbl.textContent = 'Serie';
+    const setsIn = document.createElement('input');
+    setsIn.type = 'number';
+    setsIn.inputMode = 'numeric';
+    setsIn.min = '1';
+    setsIn.max = '10';
+    setsIn.step = '1';
+    setsIn.value = ex.sets;
+    setsIn.onchange = (e) => {
+      const v = parseInt(e.target.value, 10);
+      if (isNaN(v) || v < 1 || v > 10) { e.target.value = ex.sets; return; }
+      ex.sets = v;
+      saveState();
+    };
+    setsWrap.appendChild(lbl);
+    setsWrap.appendChild(setsIn);
+    row.appendChild(setsWrap);
+
+    // Elimina
+    const del = document.createElement('button');
+    del.className = 'rx-del';
+    del.textContent = '✕';
+    del.title = 'Rimuovi esercizio';
+    del.onclick = () => {
+      if (day.exercises.length <= 1) {
+        alert('Una scheda deve avere almeno un esercizio.');
+        return;
+      }
+      if (confirm(`Rimuovere "${ex.name}" dalla scheda?\n\nLo storico delle sessioni passate non viene toccato.`)) {
+        day.exercises.splice(idx, 1);
+        saveState();
+        render();
+      }
+    };
+    row.appendChild(del);
+
+    block.appendChild(row);
+  });
+
+  // Pulsante aggiungi esercizio
+  const addBtn = document.createElement('button');
+  addBtn.className = 'routine-add-btn';
+  addBtn.textContent = '+ Aggiungi esercizio';
+  addBtn.onclick = () => {
+    day.exercises.push({
+      id: newExerciseId(),
+      name: 'Nuovo esercizio',
+      sets: 3,
+      notes: ''
+    });
+    saveState();
+    render();
+  };
+  block.appendChild(addBtn);
+
+  root.appendChild(block);
+
+  // Pulsante rinomina giorno (in fondo, separato)
+  const renameBox = document.createElement('div');
+  renameBox.className = 'settings-section';
+  renameBox.innerHTML = `<div class="label">Nome scheda</div>`;
+  const dayNameIn = document.createElement('input');
+  dayNameIn.type = 'text';
+  dayNameIn.value = day.name;
+  dayNameIn.onchange = (e) => {
+    const v = e.target.value.trim();
+    if (v) { day.name = v; saveState(); render(); }
+    else e.target.value = day.name;
+  };
+  renameBox.appendChild(dayNameIn);
+  root.appendChild(renameBox);
+}
+
+function moveRoutineExercise(idx, dir) {
+  const day = state.days.find(d => d.id === editingDayId);
+  if (!day) return;
+  const arr = day.exercises;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  saveState();
+  render();
+}
+
 function moveExercise(idx, dir) {
   const arr = activeSession.exercises;
   const newIdx = idx + dir;
@@ -977,10 +1337,95 @@ function renderHistory(root) {
     const div = document.createElement('div');
     div.className = 'session-history-item';
     div.innerHTML = `
+      <div class="h-chevron">›</div>
       <div class="h-date">${formatDate(s.completedAt || s.startedAt)}</div>
       <div class="h-summary">${escapeHTML(s.dayName)} · ${totalSets} serie</div>
     `;
+    div.onclick = () => openHistoryDetail(s.id);
     root.appendChild(div);
+  });
+}
+
+function openHistoryDetail(sessionId) {
+  viewingSessionId = sessionId;
+  view = 'history-detail';
+  render();
+}
+
+function renderHistoryDetail(root) {
+  const session = state.sessions.find(s => s.id === viewingSessionId);
+  if (!session) { view = 'history'; render(); return; }
+
+  const head = document.createElement('div');
+  head.className = 'session-header';
+  head.innerHTML = `
+    <div>
+      <div class="title">${escapeHTML(session.dayName)}</div>
+      <div class="date">${formatDate(session.completedAt || session.startedAt)}</div>
+    </div>
+  `;
+  const backBtn = document.createElement('button');
+  backBtn.className = 'secondary';
+  backBtn.textContent = '← Storico';
+  backBtn.onclick = () => { viewingSessionId = null; view = 'history'; render(); };
+  head.appendChild(backBtn);
+  root.appendChild(head);
+
+  session.exercises.forEach(ex => {
+    const box = document.createElement('div');
+    box.className = 'history-detail-ex';
+
+    const name = document.createElement('div');
+    name.className = 'hd-name';
+    name.textContent = ex.name;
+    box.appendChild(name);
+
+    if (ex.notes && ex.notes.trim()) {
+      const notes = document.createElement('div');
+      notes.className = 'hd-notes';
+      notes.textContent = '“' + ex.notes.trim() + '”';
+      box.appendChild(notes);
+    }
+
+    const setsWrap = document.createElement('div');
+    setsWrap.className = 'hd-sets';
+    ex.sets.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'hd-set' + (s.done ? ' done' : ' skipped');
+      if (s.done) {
+        row.innerHTML = `
+          <span class="hd-num">${i + 1}</span>
+          <span class="hd-val">${s.weight} kg</span>
+          <span class="hd-sep">×</span>
+          <span class="hd-val">${s.reps}</span>
+          <span class="hd-tag">reps</span>
+        `;
+      } else {
+        row.innerHTML = `
+          <span class="hd-num">${i + 1}</span>
+          <span class="hd-val" style="color:var(--muted-2)">—</span>
+          <span class="hd-tag">non completata</span>
+        `;
+      }
+      setsWrap.appendChild(row);
+    });
+    box.appendChild(setsWrap);
+
+    // Riepilogo: media reps e volume totale
+    const done = ex.sets.filter(s => s.done);
+    if (done.length > 0) {
+      const avgReps = (done.reduce((a, s) => a + Number(s.reps), 0) / done.length).toFixed(1);
+      const volume = done.reduce((a, s) => a + Number(s.weight) * Number(s.reps), 0);
+      const summary = document.createElement('div');
+      summary.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid #1a1a1a;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.12em;display:flex;gap:14px;flex-wrap:wrap';
+      summary.innerHTML = `
+        <span>Media · <b style="color:#fff">${avgReps}</b> reps</span>
+        <span>Volume · <b style="color:#fff">${volume}</b> kg</span>
+      `;
+      box.appendChild(summary);
+    }
+
+    root.appendChild(box);
   });
 }
 
@@ -1073,7 +1518,7 @@ function renderSettings(root) {
 
   const v = document.createElement('div');
   v.style.cssText = 'color:#333;font-size:10px;text-align:center;margin-top:24px;letter-spacing:0.2em;text-transform:uppercase';
-  v.textContent = 'Gando Gym · v1.1';
+  v.textContent = 'Gando Gym · v1.2';
   root.appendChild(v);
 }
 
