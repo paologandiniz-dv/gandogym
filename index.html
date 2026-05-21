@@ -493,6 +493,32 @@
     letter-spacing: 0.15em;
     border-radius: 8px;
   }
+  .day-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .day-reorder {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .day-reorder .day-move {
+    padding: 3px 8px;
+    font-size: 11px;
+    min-width: 30px;
+    background: #060606;
+    color: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .day-reorder .day-move:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
   .routine-day-block {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -905,13 +931,15 @@ function renderHome(root) {
     wrap.appendChild(b);
   }
 
-  state.days.forEach(day => {
+  state.days.forEach((day, idx) => {
     const last = getLastSessionForDay(day.id);
     const suggestionCount = countSuggestionsForDay(day.id);
     const card = document.createElement('div');
     card.className = 'day-card' + (suggestionCount > 0 ? ' has-progression' : '');
     card.style.cursor = 'pointer';
     const lastStr = last ? `Ultima · ${formatDate(last.completedAt || last.startedAt)}` : 'Mai eseguito';
+    const isFirst = idx === 0;
+    const isLast = idx === state.days.length - 1;
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
         <div style="flex:1;min-width:0">
@@ -923,14 +951,30 @@ function renderHome(root) {
           </div>
           ${suggestionCount > 0 ? `<div class="progression-flag">↑ ${suggestionCount} ${suggestionCount > 1 ? 'aumenti consigliati' : 'aumento consigliato'}</div>` : ''}
         </div>
-        <button class="edit-routine-btn" data-edit="${day.id}">✎ Modifica</button>
+        <div class="day-card-actions">
+          <div class="day-reorder">
+            <button class="day-move" data-move-up="${day.id}" ${isFirst ? 'disabled' : ''} aria-label="Sposta su">▲</button>
+            <button class="day-move" data-move-down="${day.id}" ${isLast ? 'disabled' : ''} aria-label="Sposta giù">▼</button>
+          </div>
+          <button class="edit-routine-btn" data-edit="${day.id}">✎ Modifica</button>
+        </div>
       </div>
     `;
-    // Click sull'intera card avvia la sessione, tranne sul tasto Modifica
+    // Click sull'intera card avvia la sessione, tranne sui tasti di azione
     card.onclick = (e) => {
       if (e.target.closest('[data-edit]')) {
         e.stopPropagation();
         openRoutineEditor(day.id);
+        return;
+      }
+      if (e.target.closest('[data-move-up]')) {
+        e.stopPropagation();
+        moveDay(day.id, -1);
+        return;
+      }
+      if (e.target.closest('[data-move-down]')) {
+        e.stopPropagation();
+        moveDay(day.id, +1);
         return;
       }
       startSession(day.id);
@@ -1251,6 +1295,16 @@ function moveRoutineExercise(idx, dir) {
   const newIdx = idx + dir;
   if (newIdx < 0 || newIdx >= arr.length) return;
   [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  saveState();
+  render();
+}
+
+function moveDay(dayId, dir) {
+  const idx = state.days.findIndex(d => d.id === dayId);
+  if (idx === -1) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= state.days.length) return;
+  [state.days[idx], state.days[newIdx]] = [state.days[newIdx], state.days[idx]];
   saveState();
   render();
 }
