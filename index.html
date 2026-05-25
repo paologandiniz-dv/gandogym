@@ -750,10 +750,15 @@ function startSession(dayId) {
       const lastWeights = last ? last.sets.map(s => s.weight) : [];
       const lastRepsArr = last ? last.sets.map(s => s.reps) : [];
       const isVal = (v) => v != null && v !== '' && !isNaN(Number(v));
+      // Le note vengono ereditate dalla sessione precedente (analogamente a peso e reps).
+      // Fallback al template dell'esercizio se non c'è una sessione precedente.
+      const inheritedNotes = (last && typeof last.notes === 'string' && last.notes !== '')
+        ? last.notes
+        : (ex.notes || '');
       return {
         exerciseId: ex.id,
         name: ex.name,
-        notes: ex.notes || '',
+        notes: inheritedNotes,
         suggestIncrease: suggest,
         sets: Array.from({ length: ex.sets }, (_, i) => ({
           weight: isVal(lastWeights[i]) ? lastWeights[i] : '',
@@ -833,6 +838,24 @@ function toggleSetDone(exIdx, setIdx) {
 function updateSetField(exIdx, setIdx, field, val) {
   const ex = activeSession.exercises[exIdx];
   ex.sets[setIdx][field] = val;
+  // Se modifichi il peso della prima serie, aggiorna anche le serie successive
+  // non ancora confermate. Aggiorniamo anche il value visibile degli input
+  // nel DOM senza fare render(), per non perdere il focus durante la digitazione.
+  if (field === 'weight' && setIdx === 0) {
+    const exBox = document.querySelectorAll('.exercise')[exIdx];
+    const rows = exBox ? exBox.querySelectorAll('.set-row') : null;
+    for (let i = 1; i < ex.sets.length; i++) {
+      if (!ex.sets[i].done) {
+        ex.sets[i].weight = val;
+        if (rows && rows[i]) {
+          const wInp = rows[i].querySelector('.set-field input[type="number"]');
+          if (wInp && document.activeElement !== wInp) {
+            wInp.value = val;
+          }
+        }
+      }
+    }
+  }
 }
 
 function escapeHTML(s) {
@@ -1572,7 +1595,7 @@ function renderSettings(root) {
 
   const v = document.createElement('div');
   v.style.cssText = 'color:#333;font-size:10px;text-align:center;margin-top:24px;letter-spacing:0.2em;text-transform:uppercase';
-  v.textContent = 'Gando Gym · v1.2';
+  v.textContent = 'Gando Gym · v1.3';
   root.appendChild(v);
 }
 
