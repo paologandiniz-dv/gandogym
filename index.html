@@ -218,6 +218,49 @@
     min-height: 50px;
   }
 
+  /* INCREASE FLAG */
+  .increase-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    background: var(--panel-2);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .increase-row.checked {
+    border-color: var(--red);
+    background: rgba(255,0,51,0.08);
+  }
+  .increase-row .increase-label {
+    font-family: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Oswald", sans-serif;
+    font-size: 14px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: #fff;
+  }
+  .increase-row .increase-hint {
+    font-size: 11px; color: var(--muted);
+    text-transform: none; letter-spacing: normal;
+    font-family: -apple-system, sans-serif; font-weight: 400;
+    margin-top: 2px;
+  }
+  .increase-row .increase-check {
+    width: 26px; height: 26px; flex: 0 0 26px;
+    border-radius: 6px;
+    border: 1.5px solid var(--line);
+    background: var(--panel);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900; color: transparent;
+    transition: all 0.15s;
+  }
+  .increase-row.checked .increase-check {
+    background: var(--red); border-color: var(--red); color: #fff;
+  }
+
   /* SET ROW */
   .sets { display: flex; flex-direction: column; gap: 8px; }
   .set-row {
@@ -620,7 +663,6 @@ const STORAGE_KEY = 'gandogym_v1';
 const DRAFT_KEY = 'gandogym_draft';
 const LEGACY_KEY = 'palestra_v1';
 const MAX_SESSIONS = 100;
-const DEFAULT_PROGRESSION_THRESHOLD = 8.5;
 // Incrementare quando il DEFAULT_TEMPLATE cambia, per forzare la migrazione delle schede salvate
 const TEMPLATE_VERSION = 2;
 
@@ -658,8 +700,7 @@ const DEFAULT_TEMPLATE = {
       ]
     }
   ],
-  sessions: [],
-  settings: { progressionThreshold: DEFAULT_PROGRESSION_THRESHOLD }
+  sessions: []
 };
 
 let state = loadState();
@@ -683,7 +724,6 @@ function loadState() {
     const parsed = JSON.parse(raw);
     if (!parsed.days) parsed.days = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE.days));
     if (!parsed.sessions) parsed.sessions = [];
-    if (!parsed.settings) parsed.settings = { progressionThreshold: DEFAULT_PROGRESSION_THRESHOLD };
     // Migrazione schede se la versione è cambiata: sostituisce SOLO il template degli esercizi,
     // preservando integralmente sessioni storiche e impostazioni.
     if (parsed.templateVersion !== TEMPLATE_VERSION) {
@@ -721,13 +761,11 @@ function getLastExerciseData(dayId, exerciseName) {
   return last.exercises.find(e => e.name === exerciseName) || null;
 }
 
+// Il suggerimento di aumento peso non è più calcolato automaticamente da una soglia
+// di ripetizioni: dipende esclusivamente dal flag "Aumenta" che l'utente imposta
+// manualmente sull'esercizio durante la sessione precedente.
 function shouldSuggestIncrease(lastExerciseData) {
-  if (!lastExerciseData) return false;
-  const completedSets = lastExerciseData.sets.filter(s => s.done && s.reps != null && s.reps !== '');
-  if (completedSets.length === 0) return false;
-  const total = completedSets.reduce((a, s) => a + Number(s.reps), 0);
-  const avg = total / completedSets.length;
-  return avg >= state.settings.progressionThreshold;
+  return !!(lastExerciseData && lastExerciseData.increaseNext);
 }
 
 function countSuggestionsForDay(dayId) {
@@ -760,6 +798,7 @@ function startSession(dayId) {
         name: ex.name,
         notes: inheritedNotes,
         suggestIncrease: suggest,
+        increaseNext: false,
         sets: Array.from({ length: ex.sets }, (_, i) => ({
           weight: isVal(lastWeights[i]) ? lastWeights[i] : '',
           reps: '',
@@ -831,6 +870,13 @@ function toggleSetDone(exIdx, setIdx) {
   } else {
     set.done = false;
   }
+  persistActiveSession();
+  render();
+}
+
+function toggleIncreaseNext(exIdx) {
+  const ex = activeSession.exercises[exIdx];
+  ex.increaseNext = !ex.increaseNext;
   persistActiveSession();
   render();
 }
@@ -1064,6 +1110,19 @@ function renderSession(root) {
     ta.onblur = () => persistActiveSession();
     notes.appendChild(ta);
     box.appendChild(notes);
+
+    // Flag manuale: segna se alla prossima sessione va aumentato il peso
+    const incRow = document.createElement('div');
+    incRow.className = 'increase-row' + (ex.increaseNext ? ' checked' : '');
+    incRow.innerHTML = `
+      <div>
+        <div class="increase-label">Aumenta</div>
+        <div class="increase-hint">Segna per suggerire l'aumento peso alla prossima sessione</div>
+      </div>
+      <div class="increase-check">✓</div>
+    `;
+    incRow.onclick = () => toggleIncreaseNext(exIdx);
+    box.appendChild(incRow);
 
     // Sets
     const setsDiv = document.createElement('div');
@@ -1511,27 +1570,6 @@ function renderSettings(root) {
     <div class="section-title">Setup</div>
     <div class="section-sub">Configurazione e dati</div>
   `;
-
-  const sec1 = document.createElement('div');
-  sec1.className = 'settings-section';
-  sec1.innerHTML = `<div class="label">Soglia media reps per aumento peso</div>`;
-  const thInput = document.createElement('input');
-  thInput.type = 'number';
-  thInput.step = '0.1'; thInput.min = '1'; thInput.max = '30';
-  thInput.value = state.settings.progressionThreshold;
-  thInput.style.fontSize = '20px';
-  thInput.style.fontWeight = '700';
-  thInput.style.textAlign = 'center';
-  thInput.onchange = (e) => {
-    const v = parseFloat(e.target.value);
-    if (!isNaN(v) && v > 0) { state.settings.progressionThreshold = v; saveState(); }
-  };
-  sec1.appendChild(thInput);
-  const hint = document.createElement('div');
-  hint.className = 'hint';
-  hint.textContent = 'Se la media reps dell\'ultima sessione di un esercizio supera questo valore, l\'app suggerisce di aumentare il peso.';
-  sec1.appendChild(hint);
-  root.appendChild(sec1);
 
   const sec2 = document.createElement('div');
   sec2.className = 'settings-section';
